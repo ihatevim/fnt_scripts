@@ -5,13 +5,13 @@ function GetAvaiilablePTMana(base_mana: number, max_mana: number): number {
 }
 
 const RootMenu = Menu.AddEntryDeep(["Utility", "ItemManager"])
-const State = RootMenu.AddToggle("State", true)
+const State = RootMenu.AddToggle("State")
 
 EventsSDK.on("PrepareUnitOrders", order => {
 	const ent = order.Issuers[0],
 		abil = order.Ability
 	if (
-		State.value
+		!State.value
 		|| order.Issuers.length !== 1
 		|| !(ent instanceof Unit)
 		|| (
