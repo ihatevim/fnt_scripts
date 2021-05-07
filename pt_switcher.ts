@@ -1,4 +1,4 @@
-import { Ability, dotaunitorder_t, EventsSDK, GameState, item_magic_stick, item_power_treads, Menu, PowerTreadsAttribute, TickSleeper, Unit } from "./wrapper/Imports"
+import { Ability, dotaunitorder_t, Entity, EventsSDK, GameState, item_magic_stick, item_power_treads, Menu, PowerTreadsAttribute, TickSleeper, Unit } from "./wrapper/Imports"
 
 function GetAvaiilablePTMana(base_mana: number, max_mana: number): number {
 	return (max_mana + 120) / max_mana * base_mana
@@ -7,8 +7,8 @@ function GetAvaiilablePTMana(base_mana: number, max_mana: number): number {
 const RootMenu = Menu.AddEntryDeep(["Utility", "Mana Abuse"])
 const State = RootMenu.AddToggle("State")
 
-let last_casted_abils: [Unit, Ability, TickSleeper, number][] = []
-EventsSDK.on("GameStarted", () => last_casted_abils = [])
+const last_casted_abils = new Map<Ability, [TickSleeper, number]>()
+EventsSDK.on("GameStarted", () => last_casted_abils.clear())
 EventsSDK.on("PrepareUnitOrders", order => {
 	const abil = order.Ability
 	if (
@@ -53,10 +53,23 @@ EventsSDK.on("PrepareUnitOrders", order => {
 	if (use_stick)
 		ent.CastNoTarget(stick!, order.Queue)
 	order.ExecuteQueued()
+	let target = order.Target ?? order.Position
+	if (target instanceof Entity)
+		target = target.Position
 	if (pt !== undefined) {
 		const sleeper = new TickSleeper()
-		sleeper.Sleep(GameState.AvgPing * 2 + 60 + abil.CastPoint * 1000)
-		last_casted_abils.push([ent, abil, sleeper, pt.ActiveAttribute])
+		let delay = abil.CastPoint * 1000
+		switch (order.OrderType) {
+			case dotaunitorder_t.DOTA_UNIT_ORDER_CAST_POSITION:
+			case dotaunitorder_t.DOTA_UNIT_ORDER_CAST_TARGET:
+			case dotaunitorder_t.DOTA_UNIT_ORDER_CAST_TARGET_TREE:
+				delay += ent.TurnTime(target)
+				break
+			default:
+				break
+		}
+		sleeper.Sleep(GameState.AvgPing * 2 + 60 + delay)
+		last_casted_abils.set(abil, [sleeper, pt.ActiveAttribute])
 	}
 	return false
 
@@ -65,13 +78,17 @@ EventsSDK.on("PrepareUnitOrders", order => {
 EventsSDK.on("Tick", () => {
 	if (!State.value)
 	  return
-	last_casted_abils = last_casted_abils.filter(([ent, abil, sleeper, saved_state]) => {
-		if (sleeper.Sleeping || ent.IsChanneling || ent.IsInAbilityPhase)
-			return true
+	const erased_abils: Ability[] = []
+	last_casted_abils.forEach(([sleeper, saved_state], abil) => {
+		if (sleeper.Sleeping)
+			return
+		const ent = abil.Owner
+		if (ent === undefined || ent.IsChanneling || ent.IsInAbilityPhase)
+			return
 		const pt = ent.GetItemByClass(item_power_treads)
-		if (pt !== undefined) {
+		if (pt !== undefined)
 			pt.SwitchAttribute(saved_state, false)
-			return false
-		}
+		erased_abils.push(abil)
 	})
+	erased_abils.forEach(abil => last_casted_abils.delete(abil))
 })
