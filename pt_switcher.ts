@@ -64,10 +64,6 @@ EventsSDK.on("PrepareUnitOrders", order => {
 	if (use_stick)
 		ent.CastNoTarget(stick!, order.Queue)
 	
-	const ret = EventsSDK.emit("PrepareUnitOrders", true, orders)
-	if (!ret)
-	return false
-	
 	if(ExecuteOrder.queue_user_orders){
 		orders.ExecuteQueued()
 		return false
