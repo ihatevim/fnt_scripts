@@ -1,4 +1,4 @@
-import { Ability, dotaunitorder_t, EventsSDK, ExecuteOrder, item_magic_stick, item_power_treads, Menu, Unit } from "./wrapper/Imports"
+import { Ability, dotaunitorder_t, EventsSDK, GameState, item_magic_stick, item_power_treads, Menu, PowerTreadsAttribute, TickSleeper, Unit } from "./wrapper/Imports"
 
 function GetAvaiilablePTMana(base_mana: number, max_mana: number): number {
 	return (max_mana + 120) / max_mana * base_mana
@@ -7,13 +7,12 @@ function GetAvaiilablePTMana(base_mana: number, max_mana: number): number {
 const RootMenu = Menu.AddEntryDeep(["Utility", "Mana Abuse"])
 const State = RootMenu.AddToggle("State")
 
+let last_casted_abils: [Unit, Ability, TickSleeper, number][] = []
+EventsSDK.on("GameStarted", () => last_casted_abils = [])
 EventsSDK.on("PrepareUnitOrders", order => {
-	const ent = order.Issuers[0],
-		abil = order.Ability
+	const abil = order.Ability
 	if (
 		!State.value
-		|| order.Issuers.length !== 1
-		|| !(ent instanceof Unit)
 		|| (
 			order.OrderType !== dotaunitorder_t.DOTA_UNIT_ORDER_CAST_TARGET
 			&& order.OrderType !== dotaunitorder_t.DOTA_UNIT_ORDER_CAST_NO_TARGET
@@ -23,11 +22,12 @@ EventsSDK.on("PrepareUnitOrders", order => {
 		)
 		|| !(abil instanceof Ability)
 		|| abil.ManaCost === 0
-		|| ent.InvisibilityLevel > 0
+		
 	)
 		return true
-
-
+	const ent = order.Issuers.find(issuer => issuer.Spells.includes(abil))
+	if (!(ent instanceof Unit) || ent.InvisibilityLevel > 0)
+		return true
 	const pt = ent.GetItemByClass(item_power_treads)
 	const stick = ent.GetItemByClass(item_magic_stick)
 	const mana_per_wand_charge = 15
@@ -46,21 +46,32 @@ EventsSDK.on("PrepareUnitOrders", order => {
 		if (pt !== undefined && available_mana < manacost) {
 			available_mana = GetAvaiilablePTMana(available_mana, ent.MaxMana)
 		}
-
 	}
-		switch (pt!.ActiveAttribute) {
-			case 2:
-				ent.CastNoTarget(pt!, order.Queue)
-			case 0:
-				ent.CastNoTarget(pt!, order.Queue)
-				break
-			default:
-				break
-		}
-		
+	if (pt !== undefined)
+		pt.SwitchAttribute(PowerTreadsAttribute.INTELLIGENCE, order.Queue)
+	
 	if (use_stick)
 		ent.CastNoTarget(stick!, order.Queue)
-		order.ExecuteQueued()
+	order.ExecuteQueued()
+	if (pt !== undefined) {
+		const sleeper = new TickSleeper()
+		sleeper.Sleep(GameState.AvgPing * 2 + 60)
+		last_casted_abils.push([ent, abil, sleeper, pt.ActiveAttribute])
+	}
 	return false
 
+})
+
+EventsSDK.on("Tick", () => {
+	if (!State.value)
+	  return
+	last_casted_abils = last_casted_abils.filter(([ent, abil, sleeper, saved_state]) => {
+		if (sleeper.Sleeping || ent.IsChanneling || ent.IsInAbilityPhase)
+			return true
+		const pt = ent.GetItemByClass(item_power_treads)
+		if (pt !== undefined) {
+			pt.SwitchAttribute(saved_state, false)
+			return false
+		}
+	})
 })
