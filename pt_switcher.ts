@@ -8,9 +8,6 @@ const RootMenu = Menu.AddEntryDeep(["Utility", "Mana Abuse"])
 const State = RootMenu.AddToggle("State")
 
 EventsSDK.on("PrepareUnitOrders", order => {
-	order = ExecuteOrder.fromNative()
-	if (order === undefined)
-		return true
 	const ent = order.Issuers[0],
 		abil = order.Ability
 	if (
@@ -63,12 +60,15 @@ EventsSDK.on("PrepareUnitOrders", order => {
 		
 	if (use_stick)
 		ent.CastNoTarget(stick!, order.Queue)
-	
-	if(ExecuteOrder.queue_user_orders){
-		order.ExecuteQueued()
-		return false
-	}
-
+	ExecuteOrder.PrepareOrder({
+			orderType: order.OrderType,
+			target: order.Target,
+			position: order.Position,
+			ability: order.Ability,
+			issuers: order.Issuers,
+			queue: true,
+			showEffects: true
+			})
 	return false
 
 })
