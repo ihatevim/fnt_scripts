@@ -1,4 +1,4 @@
-import { Ability, dotaunitorder_t, EventsSDK, item_magic_stick, item_magic_wand, item_power_treads, Menu, Unit } from "../wrapper/Imports"
+import { Ability, dotaunitorder_t, EventsSDK, item_magic_stick, item_power_treads, Menu, Unit } from "./wrapper/Imports"
 
 function GetAvaiilablePTMana(base_mana: number, max_mana: number): number {
 	return (max_mana + 120) / max_mana * base_mana
