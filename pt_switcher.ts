@@ -1,10 +1,10 @@
-import { Ability, dotaunitorder_t, EventsSDK, item_magic_stick, item_power_treads, Menu, Unit } from "./wrapper/Imports"
+import { Ability, dotaunitorder_t, EventsSDK, ExecuteOrder, item_magic_stick, item_power_treads, Menu, Unit } from "./wrapper/Imports"
 
 function GetAvaiilablePTMana(base_mana: number, max_mana: number): number {
 	return (max_mana + 120) / max_mana * base_mana
 }
 
-const RootMenu = Menu.AddEntryDeep(["Utility", "ItemManager"])
+const RootMenu = Menu.AddEntryDeep(["Utility", "Mana Abuse"])
 const State = RootMenu.AddToggle("State")
 
 EventsSDK.on("PrepareUnitOrders", order => {
@@ -51,16 +51,26 @@ EventsSDK.on("PrepareUnitOrders", order => {
 	if (pt !== undefined)
 		switch (pt.ActiveAttribute) {
 			case 2:
-				ent.CastNoTarget(pt)
+				ent.CastNoTarget(pt!, order.Queue)
 			case 0:
-				ent.CastNoTarget(pt)
+				ent.CastNoTarget(pt!, order.Queue)
 				break
 			default:
 				break
 		}
 	if (use_stick)
-		ent.CastNoTarget(stick!)
+		ent.CastNoTarget(stick!, order.Queue)
 
-	order.ExecuteQueued()
+	
+		ExecuteOrder.PrepareOrder({
+			orderType: order.OrderType,
+			target: order.Target,
+			position: order.Position,
+			ability: order.Ability,
+			issuers: order.Issuers,
+			queue: true,
+			showEffects: true
+			})
+
 	return false
 })
