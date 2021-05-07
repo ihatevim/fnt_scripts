@@ -7,8 +7,10 @@ function GetAvaiilablePTMana(base_mana: number, max_mana: number): number {
 const RootMenu = Menu.AddEntryDeep(["Utility", "Mana Abuse"])
 const State = RootMenu.AddToggle("State")
 
-EventsSDK.on("PrepareUnitOrders", order => {
-	ExecuteOrder.queue_user_orders
+EventsSDK.on("PrepareUnitOrders", async order => {
+	const orders = ExecuteOrder.fromNative()
+	if (orders === undefined)
+	return true
 	const ent = order.Issuers[0],
 		abil = order.Ability
 	if (
@@ -61,7 +63,14 @@ EventsSDK.on("PrepareUnitOrders", order => {
 		
 	if (use_stick)
 		ent.CastNoTarget(stick!, order.Queue)
-	order.ExecuteQueued()
+	const ret = await EventsSDK.emit("PrepareUnitOrders", true, orders)
+	if (!ret)
+		return false
+	if(ExecuteOrder.queue_user_orders){
+		orders.ExecuteQueued()
+		return false
+	}
+
 	return false
 
 })
