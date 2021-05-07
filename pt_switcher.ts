@@ -55,7 +55,7 @@ EventsSDK.on("PrepareUnitOrders", order => {
 	order.ExecuteQueued()
 	if (pt !== undefined) {
 		const sleeper = new TickSleeper()
-		sleeper.Sleep(GameState.AvgPing * 2 + 60)
+		sleeper.Sleep(GameState.AvgPing * 2 + 60 + abil.CastPoint * 1000)
 		last_casted_abils.push([ent, abil, sleeper, pt.ActiveAttribute])
 	}
 	return false
