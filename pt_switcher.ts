@@ -48,8 +48,7 @@ EventsSDK.on("PrepareUnitOrders", order => {
 		}
 
 	}
-	if (pt !== undefined)
-		switch (pt.ActiveAttribute) {
+		switch (pt!.ActiveAttribute) {
 			case 2:
 				ent.CastNoTarget(pt!, order.Queue)
 			case 0:
@@ -58,6 +57,7 @@ EventsSDK.on("PrepareUnitOrders", order => {
 			default:
 				break
 		}
+		
 	if (use_stick)
 		ent.CastNoTarget(stick!, order.Queue)
 
