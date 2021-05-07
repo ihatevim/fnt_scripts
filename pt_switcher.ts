@@ -68,7 +68,8 @@ EventsSDK.on("PrepareUnitOrders", order => {
 			issuers: order.Issuers,
 			queue: true,
 			showEffects: true
-			});
+			})
+		order.ExecuteQueued
 	return false
 
 })
