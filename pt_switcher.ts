@@ -60,6 +60,6 @@ EventsSDK.on("PrepareUnitOrders", order => {
 		
 	if (use_stick)
 		ent.CastNoTarget(stick!, order.Queue)
-	order.ExecuteQueued()
+	order.Execute
 	return false
 })
