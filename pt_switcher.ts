@@ -62,15 +62,13 @@ EventsSDK.on("PrepareUnitOrders", order => {
 		ent.CastNoTarget(stick!, order.Queue)
 
 	
-		ExecuteOrder.PrepareOrder({
-			orderType: order.OrderType,
-			target: order.Target,
-			position: order.Position,
-			ability: order.Ability,
-			issuers: order.Issuers,
-			queue: true,
-			showEffects: true
-			})
+		new ExecuteOrder(
+			order.OrderType,
+			order.Target,
+			order.Position,
+			order.Ability,
+			order.Issuers,
+			)
 
 	return false
 })
