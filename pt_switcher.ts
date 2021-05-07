@@ -8,6 +8,7 @@ const RootMenu = Menu.AddEntryDeep(["Utility", "Mana Abuse"])
 const State = RootMenu.AddToggle("State")
 
 EventsSDK.on("PrepareUnitOrders", order => {
+	ExecuteOrder.queue_user_orders
 	const ent = order.Issuers[0],
 		abil = order.Ability
 	if (
