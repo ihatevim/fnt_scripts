@@ -1,4 +1,3 @@
-import { Queue } from "gitlab.com/FNT_Rework/wrapper/wrapper/Notifications/data"
 import { Ability, dotaunitorder_t, EventsSDK, ExecuteOrder, item_magic_stick, item_power_treads, Menu, Unit } from "./wrapper/Imports"
 
 function GetAvaiilablePTMana(base_mana: number, max_mana: number): number {
@@ -9,7 +8,6 @@ const RootMenu = Menu.AddEntryDeep(["Utility", "Mana Abuse"])
 const State = RootMenu.AddToggle("State")
 
 EventsSDK.on("PrepareUnitOrders", order => {
-	const theOrder = order.Queue
 	const ent = order.Issuers[0],
 		abil = order.Ability
 	if (
@@ -62,7 +60,6 @@ EventsSDK.on("PrepareUnitOrders", order => {
 		
 	if (use_stick)
 		ent.CastNoTarget(stick!, order.Queue)
-		theOrder
 		order.ExecuteQueued
 	return false
 
